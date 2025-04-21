@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOAP Hello UI</title>
+</head>
+<body style="background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: Arial, sans-serif;">
+  <div style="background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); width: 100%; max-width: 400px;">
+    <h2 style="font-size: 24px; font-weight: bold; text-align: center; color: #333; margin-bottom: 20px;">Say Hello (SOAP Client)</h2>
+    
+    <div style="margin-bottom: 15px;">
+      <input 
+        type="text" 
+        id="nameInput" 
+        placeholder="Enter your name" 
+        style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; outline: none; transition: border-color 0.2s;"
+        onfocus="this.style.borderColor='#007bff';"
+        onblur="this.style.borderColor='#ccc';"
+      >
+    </div>
+    
+    <button 
+      onclick="callSayHello()" 
+      id="submitButton"
+      style="width: 100%; background-color: #007bff; color: white; padding: 10px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; transition: background-color 0.2s;"
+      onmouseover="this.style.backgroundColor='#0056b3';"
+      onmouseout="this.style.backgroundColor='#007bff';"
+    >
+      Say Hello
+    </button>
+
+    <h3 style="font-size: 18px; font-weight: bold; margin-top: 20px; margin-bottom: 10px; color: #333;">Response:</h3>
+    <pre 
+      id="responseBox" 
+      style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd; border-radius: 4px; color: #333; font-size: 14px; overflow: auto; min-height: 60px;"
+    >Waiting for response...</pre>
+  </div>
+
+  <script>
+    async function callSayHello() {
+      const nameInput = document.getElementById("nameInput");
+      const submitButton = document.getElementById("submitButton");
+      const responseBox = document.getElementById("responseBox");
+      
+      // Disable button and show loading state
+      submitButton.disabled = true;
+      submitButton.textContent = "Loading...";
+      responseBox.textContent = "Sending request...";
+
+      const name = nameInput.value;
+      const url = "http://localhost:8000/wsdl";
+
+      const soapEnvelope = `
+        <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                          xmlns:hel="http://example.com/hello">
+          <soapenv:Header/>
+          <soapenv:Body>
+            <hel:sayHello>
+              <name>${name}</name>
+            </hel:sayHello>
+          </soapenv:Body>
+        </soapenv:Envelope>
+      `;
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/xml;charset=UTF-8",
+            "SOAPAction": "sayHello"
+          },
+          body: soapEnvelope
+        });
+
+        const text = await res.text();
+        console.log("Raw SOAP Response:", text);
+
+        // Extract <greeting> from the response using RegEx
+        const match = text.match(/<greeting>(.*)<\/greeting>/);
+        const greeting = match ? match[1] : "No greeting found";
+
+        responseBox.textContent = greeting;
+
+      } catch (error) {
+        responseBox.textContent = "Error: " + error;
+      } finally {
+        // Re-enable button and reset text
+        submitButton.disabled = false;
+        submitButton.textContent = "Say Hello";
+      }
+    }
+  </script>
+</body>
+</html>
